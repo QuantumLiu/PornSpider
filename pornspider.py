@@ -172,7 +172,7 @@ def get_video(videopage):
     headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     r_v=r'"quality":".*?","videoUrl":"(.*?)"}'
     r_quality=r'quality":"(\d*?)","videoUrl":".*?"}'
-    r_duration=r'"postroll_url":.*?,"isHD":".*?","video_duration":"(\d.*?)","actionTags"'
+    r_duration=r'"video_duration":"(\d.*?)"'
     r_view=r'<div class="views"><span class="count">(.*?)</span>'
     r_percent=r'<span class="percent">(.*?)</span>'
     r_up=r'<span class="votesUp">(.*?)</span>'
