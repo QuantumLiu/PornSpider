@@ -11,12 +11,16 @@ from multiprocessing import Pool,cpu_count,freeze_support
 import traceback
 import time
 from PIL import Image
-import win32api
+#==============================================================================
+# import win32api
+#==============================================================================
 import os
-if win32api.GetSystemDefaultLangID()==2052:
-    language=1#chinese
-else:
-    language=0#english
+#==============================================================================
+# if win32api.GetSystemDefaultLangID()==2052:
+#     language=1#chinese
+# else:
+#     language=0#english
+#==============================================================================
 class site():
     def __init__(self):
         self.category_params,self.category_name_list=list_categories()
