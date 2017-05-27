@@ -10,6 +10,7 @@ import requests
 from multiprocessing import Pool,cpu_count,freeze_support
 import traceback
 import time
+from PIL import Image
 import win32api
 import os
 if win32api.GetSystemDefaultLangID()==2052:
@@ -22,6 +23,8 @@ class site():
         self.category_dict={}.fromkeys(self.category_name_list)
         print('There are '+str(len(self.category_name_list))+' categories.\n',self.category_name_list)
         self.video_list={}
+        self.id2title_dict={}
+        self.category_id=1
     def init_category(self,name_list=[''],num_category=0):
         if num_category and name_list:
             name_list=name_list[:min(num_category,len(name_list)-1)]
@@ -33,18 +36,20 @@ class site():
         return self
     def iterate_videos(self,category_name='',num_page=0,start_page=1,iterate_all=False):
         for v in self.category_dict[category_name].iterate_videos_p(num_page,start_page,iterate_all):
-            self.video_list[v.title]=v
+            self.video_list[v.video_id]=v
+            self.id2title_dict[v.video_id]=v.title
         return self
 #==============================================================================
 #     
 #==============================================================================
 class category():
-    def __init__(self,name='',url='',num_video=0):
+    def __init__(self,name='',url='',num_video=0,category_id=1):
         self.name=name
         self.url=url
         self.num_video=num_video
         self.max_page=self.max_page()
         self.videos=[]
+        self.category_id=category_id
     def max_page(self):
         try:
             headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
@@ -81,7 +86,7 @@ class category():
         pool=Pool(cpu_count())
         param_results=[]
         for p in range(start_page,((start_page+num_page if num_page else max(start_page+100,self.max_page)) if not iterate_all else self.max_page)):
-            param_results.append(pool.apply_async(get_videoadd,(self.url,p)))
+            param_results.append(pool.apply_async(get_videoadd,(self.url,p,self.category_id)))
         pool.close()
         pool.join()
         pool=Pool(cpu_count())
@@ -96,10 +101,11 @@ class category():
 #         
 #==============================================================================
 class video():
-    def __init__(self,title='',page='',cover=''):
+    def __init__(self,title='',page='',cover='',video_id=''):
         self.page=page
         self.cover=cover
         self.title=title
+        self.video_id=video_id
         print('Crawling video:'+title)
         try:
             self.mp4add,self.duration,self.info=get_video(self.page)
@@ -107,6 +113,21 @@ class video():
             self.mp4add,self.duration,self.info='',0,''
             print('Got error, failed instantiating viedo: '+title)
             traceback.print_exc()
+    def show_info(self,pic_dir='',show_pic=False):
+        if show_pic:
+            headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
+            if not pic_dir:
+                self.pic_dir='./'+self.info['categories'][0]
+            else:
+                self.pic_dir=pic_dir
+            if not os.path.exists(self.pic_dir):
+                os.mkdir(self.dir_name)
+            self.pic_path=self.pic_dir+'/'+self.title+'.jpg'
+            with open(self.pic_path,'wb') as f:
+                f.write(requests.get(self.cover,headers=headers).content)
+            with Image.open(self.pic_path) as img:
+                img.show()
+        print('Video: ID '+self.video_id+' '+self.title,self.mp4add,self.info)
 #==============================================================================
 #         
 #==============================================================================
@@ -121,7 +142,7 @@ def list_categories(root='https://www.pornhub.com'):
     class_list=re.findall(r_class,html_text)
     url_list=re.findall(r_url,html_text)
     num_list=re.findall(r_num,html_text)
-    category_params={c:(root+u,int(n)) for c,u,n in zip(class_list,url_list,num_list)}
+    category_params={c:(root+u,int(n),ID+1) for c,u,n,ID in zip(class_list,url_list,num_list,range(len(class_list)))}
     return category_params,class_list
 def init_categories_p(category_params={},name_list=['']):
     freeze_support()
@@ -134,14 +155,15 @@ def init_categories_p(category_params={},name_list=['']):
     return [result.get() for result in results]
 def init_categories_s(category_params={},name_list=['']):
     return [category(*(name,)+category_params.get(name)) for name in name_list]
-def get_videoadd(url,page):
+def get_videoadd(url='',page=0,category_id=0):
     r_u=r'<li class="videoblock videoBox[\s\S]*?\t<a href="(.*?)" title=".*?" class="img"'
     r_t=r'<li class="videoblock videoBox[\s\S]*?\t<a href=".*?" title="(.*?)" class="img"'
     r_c=r'\tdata-mediumthumb="(.*?)"\n'
     headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     t=requests.get(url,params={'page':page},headers=headers).text
     t_body=t[t.find('<ul class="nf-videos videos search-video-thumbs">'):]
-    return [(title,add,cover) for title,add,cover in zip(re.findall(r_t,t_body),re.findall(r_u,t_body),re.findall(r_c,t_body))]
+    t_l=re.findall(r_t,t_body)
+    return [(title,add,cover,'.'.join([str(category_id),str(page),str(ID+1)])) for title,add,cover,ID in zip(t_l,re.findall(r_u,t_body),re.findall(r_c,t_body),range(len(t_l)))]
 def get_video(videopage):
     headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     r_v=r'"quality":".*?","videoUrl":"(.*?)"}'
@@ -160,7 +182,7 @@ def get_video(videopage):
     info={'views':re.findall(r_view,html_text)[0],'percent':re.findall(r_percent,html_text)[0],'up':re.findall(r_up,html_text)[0],'down':re.findall(r_down,html_text)[0],'categories':re.findall(r_cate,html_text)}
     return (add,duration,info)
 if __name__=='__main__':
-    pornhub=site().init_category(name_list=['Shemale'])
-    pornhub.iterate_videos(category_name='Shemale',num_page=5,start_page=1,iterate_all=False)
-    print(len(pornhub.category_dict['Shemale'].videos))
+    pornhub=site().init_category(name_list=['Japanese'])
+    pornhub.iterate_videos(category_name='Japanese',num_page=5,start_page=1,iterate_all=False)
+    print(len(pornhub.category_dict['Japanese'].videos))
 
