@@ -11,6 +11,7 @@ from multiprocessing import Pool,cpu_count,freeze_support
 import traceback
 import time
 from PIL import Image
+import pickle
 #==============================================================================
 # import win32api
 #==============================================================================
@@ -186,7 +187,23 @@ def get_video(videopage):
     info={'views':re.findall(r_view,html_text)[0],'percent':re.findall(r_percent,html_text)[0],'up':re.findall(r_up,html_text)[0],'down':re.findall(r_down,html_text)[0],'categories':re.findall(r_cate,html_text)}
     return (add,duration,info)
 if __name__=='__main__':
-    pornhub=site().init_category(name_list=['Japanese'])
-    pornhub.iterate_videos(category_name='Japanese',num_page=5,start_page=1,iterate_all=False)
-    print(len(pornhub.category_dict['Japanese'].videos))
-
+    try:
+        with open('pornhub.pkl','rb')as f:
+            pornhub=pickle.load(f)
+    except:
+        pornhub=site()
+    st=time.time()
+    n=0
+    try:
+        name_list=input(','.join(pornhub.category_name_list)+'\n\nPlease type a list of category name from the categories list, split them by "," : ').split(',')
+    except:
+        name_list=pornhub.category_name_list[:1]
+    print('Collecting categories: '+','.join(name_list))
+    pornhub.init_category(name_list=name_list)
+    for name in name_list:
+        print('Collecting category: '+name)
+        pornhub.iterate_videos(category_name=name,num_page=5,start_page=1,iterate_all=True)
+        n+=len(pornhub.category_dict[name].videos)
+    print('Number of videos :',n,'Average time costing : '+str(n/(time.time()-st))+'page/s')
+    with open('pornhub.pkl','wb')as f:
+        pickle.dump(pornhub,f)
