@@ -30,6 +30,7 @@ class site():
         self.video_list={}
         self.id2title_dict={}
         self.category_id=1
+        self.title2id_dict={}
     def init_category(self,name_list=[''],num_category=0):
         if num_category and name_list:
             name_list=name_list[:min(num_category,len(name_list)-1)]
@@ -42,6 +43,7 @@ class site():
     def iterate_videos(self,category_name='',num_page=0,start_page=1,iterate_all=False):
         for v in self.category_dict[category_name].iterate_videos_p(num_page,start_page,iterate_all):
             self.video_list[v.video_id]=v
+            self.title2id_dict[v.title]=v.video_id
             self.id2title_dict[v.video_id]=v.title
         return self
 #==============================================================================
@@ -126,7 +128,7 @@ class video():
             else:
                 self.pic_dir=pic_dir
             if not os.path.exists(self.pic_dir):
-                os.mkdir(self.dir_name)
+                os.mkdir(self.pic_dir)
             self.pic_path=self.pic_dir+'/'+self.title+'.jpg'
             with open(self.pic_path,'wb') as f:
                 f.write(requests.get(self.cover,headers=headers).content)
@@ -186,24 +188,27 @@ def get_video(videopage):
     duration=int(re.findall(r_duration,html_text)[0])
     info={'views':re.findall(r_view,html_text)[0],'percent':re.findall(r_percent,html_text)[0],'up':re.findall(r_up,html_text)[0],'down':re.findall(r_down,html_text)[0],'categories':re.findall(r_cate,html_text)}
     return (add,duration,info)
-if __name__=='__main__':
-    try:
-        with open('pornhub.pkl','rb')as f:
-            pornhub=pickle.load(f)
-    except:
-        pornhub=site()
-    st=time.time()
-    n=0
-    try:
-        name_list=input(','.join(pornhub.category_name_list)+'\n\nPlease type a list of category name from the categories list, split them by "," : ').split(',')
-    except:
-        name_list=pornhub.category_name_list[:1]
-    print('Collecting categories: '+','.join(name_list))
-    pornhub.init_category(name_list=name_list)
-    for name in name_list:
-        print('Collecting category: '+name)
-        pornhub.iterate_videos(category_name=name,num_page=5,start_page=1,iterate_all=True)
-        n+=len(pornhub.category_dict[name].videos)
-    print('Number of videos :',n,'Average time costing : '+str(n/(time.time()-st))+'page/s')
-    with open('pornhub.pkl','wb')as f:
-        pickle.dump(pornhub,f)
+#==============================================================================
+# if __name__=='__main__':
+#     try:
+#         with open('pornhub.pkl','rb')as f:
+#             pornhub=pickle.load(f)
+#     except:
+#         pornhub=site()
+#     st=time.time()
+#     n=0
+#     try:
+#         name_list=input(','.join(pornhub.category_name_list)+'\n\nPlease type a list of category name from the categories list, split them by "," : ').split(',')
+#     except:
+#         name_list=pornhub.category_name_list[:1]
+#     print('Collecting categories: '+','.join(name_list))
+#     pornhub.init_category(name_list=name_list)
+#     for name in name_list:
+#         print('Collecting category: '+name)
+#         pornhub.iterate_videos(category_name=name,num_page=5,start_page=1,iterate_all=True)
+#         n+=len(pornhub.category_dict[name].videos)
+#     print('Number of videos :',n,'Average time costing : '+str(n/(time.time()-st))+'page/s')
+#     with open('pornhub.pkl','wb')as f:
+#         pickle.dump(pornhub,f)
+# 
+#==============================================================================
