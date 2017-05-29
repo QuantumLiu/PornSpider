@@ -12,17 +12,10 @@ import traceback
 import time
 from PIL import Image
 import pickle
-#==============================================================================
-# import win32api
-#==============================================================================
 import os
-#==============================================================================
-# if win32api.GetSystemDefaultLangID()==2052:
-#     language=1#chinese
-# else:
-#     language=0#english
-#==============================================================================
 class site():
+#对于pornhub全站的抽象，拥有多个视频类别（categories）;
+#An abstraction of pornhub website,has a list of categories and videos.
     def __init__(self):
         self.category_params,self.category_name_list=list_categories()
         self.category_dict={}.fromkeys(self.category_name_list)
@@ -50,6 +43,8 @@ class site():
 #     
 #==============================================================================
 class category():
+#对于视频分类(category)的抽象，拥有一系列视频
+#An abstration of "categories", has a list of viseos
     def __init__(self,name='',url='',num_video=0,category_id=1):
         self.name=name
         self.url=url
@@ -108,6 +103,8 @@ class category():
 #         
 #==============================================================================
 class video():
+#对视频的抽象，属性包括所在网页、封面、不同质量MP4文件的链接，时长，评价，所属分类
+#An abstraction of video, attributes contain the web page, .MP4 files' urls of different qualities, duration, grade, categories
     def __init__(self,title='',page='',cover='',video_id=''):
         self.page=page
         self.cover=cover
@@ -121,6 +118,8 @@ class video():
             print('Got error, failed instantiating viedo: '+title)
             traceback.print_exc()
     def show_info(self,pic_dir='',show_pic=False):
+#显示视频信息和封面图片
+#Show infomations and the cover oicture of the video
         if show_pic:
             headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
             if not pic_dir:
@@ -139,6 +138,8 @@ class video():
 #         
 #==============================================================================
 def list_categories(root='https://www.pornhub.com'):
+#列举Pornhub所有的视频分类，返回一个键名为类名的字典和一个属于类名的list，字典的值是tuple，包含入口URL，视频数，赋予的ID
+#Enumerate all categories of PornHub,return a dictionary whose keys are names of categories and a list of categories names, the values of the dics is a tuple,contain entrance url, number of videos, a given ID
     headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     cate_root=root+'/categories'
     r_class=r'<div class="category-wrapper">\n\t\t\t\t\t\t<a href=".*?" alt="(.*?)" class="js-mxp"'
@@ -152,6 +153,8 @@ def list_categories(root='https://www.pornhub.com'):
     category_params={c:(root+u,int(n),ID+1) for c,u,n,ID in zip(class_list,url_list,num_list,range(len(class_list)))}
     return category_params,class_list
 def init_categories_p(category_params={},name_list=['']):
+    #实例化category的并行实现
+    #A parallel implemention of instantiating categories
     freeze_support()
     pool=Pool(cpu_count())
     results=[]
@@ -163,6 +166,8 @@ def init_categories_p(category_params={},name_list=['']):
 def init_categories_s(category_params={},name_list=['']):
     return [category(*(name,)+category_params.get(name)) for name in name_list]
 def get_videoadd(url='',page=0,category_id=0):
+    #从视频列表网页抓取视频名称、封面和播放页的地址
+    #Getting name,cover,and the url of play page of the video from a list page.
     r_u=r'<li class="videoblock videoBox[\s\S]*?\t<a href="(.*?)" title=".*?" class="img"'
     r_t=r'<li class="videoblock videoBox[\s\S]*?\t<a href=".*?" title="(.*?)" class="img"'
     r_c=r'\tdata-mediumthumb="(.*?)"\n'
@@ -172,6 +177,9 @@ def get_videoadd(url='',page=0,category_id=0):
     t_l=re.findall(r_t,t_body)
     return [(title,add,cover,'.'.join([str(category_id),str(page),str(ID+1)])) for title,add,cover,ID in zip(t_l,re.findall(r_u,t_body),re.findall(r_c,t_body),range(len(t_l)))]
 def get_video(videopage):
+    #从播放页抓取视频详情，返回一个图片来了包括不同质量的MP4文件地址的一个字典，时长(秒)，一个包含浏览数、赞/踩比率和数量以及所属分类的字典。可单独使用。
+    #Crawling detail of the video, return a tuple which has a dict of MP4 file's address of different qualities, the duration(second),a dict contains number of views, the rate and number of votes Up/Down.
+    
     headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     r_v=r'"quality":".*?","videoUrl":"(.*?)"}'
     r_quality=r'quality":"(\d*?)","videoUrl":".*?"}'
@@ -188,27 +196,3 @@ def get_video(videopage):
     duration=int(re.findall(r_duration,html_text)[0])
     info={'views':re.findall(r_view,html_text)[0],'percent':re.findall(r_percent,html_text)[0],'up':re.findall(r_up,html_text)[0],'down':re.findall(r_down,html_text)[0],'categories':re.findall(r_cate,html_text)}
     return (add,duration,info)
-#==============================================================================
-# if __name__=='__main__':
-#     try:
-#         with open('pornhub.pkl','rb')as f:
-#             pornhub=pickle.load(f)
-#     except:
-#         pornhub=site()
-#     st=time.time()
-#     n=0
-#     try:
-#         name_list=input(','.join(pornhub.category_name_list)+'\n\nPlease type a list of category name from the categories list, split them by "," : ').split(',')
-#     except:
-#         name_list=pornhub.category_name_list[:1]
-#     print('Collecting categories: '+','.join(name_list))
-#     pornhub.init_category(name_list=name_list)
-#     for name in name_list:
-#         print('Collecting category: '+name)
-#         pornhub.iterate_videos(category_name=name,num_page=5,start_page=1,iterate_all=True)
-#         n+=len(pornhub.category_dict[name].videos)
-#     print('Number of videos :',n,'Average time costing : '+str(n/(time.time()-st))+'page/s')
-#     with open('pornhub.pkl','wb')as f:
-#         pickle.dump(pornhub,f)
-# 
-#==============================================================================
