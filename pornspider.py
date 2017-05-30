@@ -97,7 +97,7 @@ class category():
             video_results.append(pool.apply_async(video,params))
         pool.close()
         pool.join()
-        self.videos=[result.get() for result in video_results]
+        self.videos+=[result.get() for result in video_results]
         return self.videos
 #==============================================================================
 #         
@@ -111,11 +111,13 @@ class video():
         self.title=title
         self.video_id=video_id
         print('Crawling video:'+title)
+        self.mp4add,self.duration,self.info='',0,''
+    def update(self):
         try:
             self.mp4add,self.duration,self.info=get_video(self.page)
         except:
             self.mp4add,self.duration,self.info='',0,''
-            print('Got error, failed instantiating viedo: '+title)
+            print('Got error, failed instantiating viedo: '+self.title)
             traceback.print_exc()
     def show_info(self,pic_dir='',show_pic=False):
 #显示视频信息和封面图片

@@ -107,6 +107,7 @@ class wechat_session():
     #Show infomations and the cover oicture of the video
         try:
             video=self.pornhub.video_list[video_id]
+            video.update()
             if show_pic:
                 headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
                 if not pic_dir:
@@ -133,6 +134,7 @@ class wechat_session():
     #Show abstract infomations of the video
         try:
             video=self.pornhub.video_list[video_id]
+            video.update()
             msg='Video: ID '+video.video_id+'\nTitle: '+video.title+'\nQuaulitys :'
             for k,v in video.mp4add.items():
                 msg+=' '+str(k)+'P;'
