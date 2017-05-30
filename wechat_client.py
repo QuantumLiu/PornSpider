@@ -92,6 +92,9 @@ class wechat_session():
         local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
         send_text('There are '+str(len(local_name_list))+' categories.\n'+','.join(local_name_list))
     def broswe_category(self,name='',num=5,start=0):
+        local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
+        if name not in local_name_list:
+            self.collect(name)
         start=(int(start) if start else 0)
         _end=start+num
         msg='Brosweing category '+name
