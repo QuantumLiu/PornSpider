@@ -82,11 +82,13 @@ class wechat_session():
             name_list=self.pornhub.category_name_list[:1]
         send_text('Collecting categories: '+','.join(name_list))
         self.pornhub.init_category(name_list=name_list)
+        n=0
+        st=time.time()
         for name in name_list:
             send_text('Collecting category: '+name)
             self.pornhub.iterate_videos(category_name=name,num_page=5,start_page=1,iterate_all=True)
-            n+=len(pornhub.category_dict[name].videos)
-        send_text('Number of videos :',n,'Average time costing : '+str(n/(time.time()-st))+'page/s')
+            n+=len(self.pornhub.category_dict[name].videos)
+        send_text('Number of videos : '+str(n)+' Average time costing : '+str(n/(time.time()-st))+'page/s')
         return
     def list_local_categories(self,root='https://www.pornhub.com'):
         local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
@@ -123,7 +125,7 @@ class wechat_session():
                 with open(video.pic_path,'wb') as f:
                     f.write(requests.get(video.cover,headers=headers).content)
                 send_img(video.pic_path)
-            msg='Video: ID '+video.video_id+'\nTitle: '+video.title
+            msg='Video: ID '+video.video_id+'\nTitle: '+video.title+'\nDuration: '+str(video.duration)
             for k,v in video.mp4add.items():
                 msg+='\nQuaulity '+str(k)+'P: \n'+str(v)
             for k,v in video.info.items():
@@ -138,7 +140,7 @@ class wechat_session():
         try:
             video=self.pornhub.video_list[video_id]
             video.update()
-            msg='Video: ID '+video.video_id+'\nTitle: '+video.title+'\nQuaulitys :'
+            msg='Video: ID '+video.video_id+'\nTitle: '+video.title+'\nDuration: '+str(video.duration)+'\nQuaulitys :'
             for k,v in video.mp4add.items():
                 msg+=' '+str(k)+'P;'
             for k,v in video.info.items():
@@ -170,7 +172,7 @@ class wechat_session():
         @itchat.msg_register(TEXT)
         def auto_reply(msg):
             text=msg['Text']
-            cmd={'raido':[u'电台','radio','Radio'],'collect':[u'收集','collect','Collect'],'broswe category':[u'浏览类别','Broswe category','broswe category'],'broswe video':[u'浏览视频','broswe video','Broswe video'],'enumerate categorise':[u'显示本地类别','enumerate loacal categories']}
+            cmd={'raido':[u'电台','radio','Radio'],'collect':[u'收集','collect','Collect'],'broswe category':[u'浏览类别','Broswe category','broswe category'],'broswe video':[u'浏览视频','broswe video','Broswe video'],'enumerate categorise':[u'显示本地类别','enumerate loacal categories'],'save':['Save',u'保存']}
             if msg['ToUserName']=='filehelper':
                 if any((c in text) for c in cmd['raido']):
                     n=int(re.findall(r"\d+\.?\d*",text)[0])
@@ -195,6 +197,11 @@ class wechat_session():
                 if any((c in text) for c in cmd['enumerate categorise']):
                     try:
                         self.list_local_categories()
+                    except:
+                        send_text(traceback.format_exc())
+                if any((c in text) for c in cmd['save']):
+                    try:
+                        self.save()
                     except:
                         send_text(traceback.format_exc())
     def run(self):
