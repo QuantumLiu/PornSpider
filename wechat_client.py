@@ -88,11 +88,15 @@ class wechat_session():
             send_text('Collecting category: '+name)
             self.pornhub.iterate_videos(category_name=name,num_page=5,start_page=1,iterate_all=True)
             n+=len(self.pornhub.category_dict[name].videos)
-        send_text('Number of videos : '+str(n)+' Average time costing : '+str(n/(time.time()-st))+'page/s')
+        send_text('Number of videos : '+str(n)+' Average time cost : '+str(n/(time.time()-st))+'page/s')
         return
-    def list_local_categories(self,root='https://www.pornhub.com'):
+    def list_all_categories(self,root='https://www.pornhub.com'):
+        send_text(','.join(self.pornhub.category_name_list))
+        return
+    def list_local_categories(self):
         local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
         send_text('There are '+str(len(local_name_list))+' categories.\n'+','.join(local_name_list))
+        return
     def broswe_category(self,name='',num=5,start=0):
         local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
         if name not in local_name_list:
@@ -172,7 +176,7 @@ class wechat_session():
         @itchat.msg_register(TEXT)
         def auto_reply(msg):
             text=msg['Text']
-            cmd={'raido':[u'电台','radio','Radio'],'collect':[u'收集','collect','Collect'],'broswe category':[u'浏览类别','Broswe category','broswe category'],'broswe video':[u'浏览视频','broswe video','Broswe video'],'enumerate categorise':[u'显示本地类别','enumerate loacal categories'],'save':['Save',u'保存']}
+            cmd={'raido':[u'电台','radio','Radio'],'collect':[u'收集','collect','Collect'],'broswe category':[u'浏览类别','Broswe category','broswe category'],'broswe video':[u'浏览视频','broswe video','Broswe video'],'enumerate categorise':[u'显示本地类别','enumerate local categories'],'enumerate all categorise':[u'显示所有类别','enumerate all categories'],'save':['Save',u'保存']}
             if msg['ToUserName']=='filehelper':
                 if any((c in text) for c in cmd['raido']):
                     n=int(re.findall(r"\d+\.?\d*",text)[0])
@@ -197,6 +201,11 @@ class wechat_session():
                 if any((c in text) for c in cmd['enumerate categorise']):
                     try:
                         self.list_local_categories()
+                    except:
+                        send_text(traceback.format_exc())
+                if any((c in text) for c in cmd['enumerate all categorise']):
+                    try:
+                        self.list_all_categories()
                     except:
                         send_text(traceback.format_exc())
                 if any((c in text) for c in cmd['save']):
