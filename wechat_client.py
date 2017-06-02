@@ -61,6 +61,8 @@ def send_img(filename):
         return
 class wechat_session():
     def __init__(self):
+        #初始化一个微信会话，登录并加载/实例化pornhub对象
+        #Initializing a wechat session,log in and load/instante a pornhub object
         login()
         print('Loged in successfully!\n')
         send_text('Loged in successfully!\n')
@@ -73,9 +75,11 @@ class wechat_session():
         self.registe()
         self.run()
     def radio(self,n=1):
+        #电台功能，随机推送指定数目，如：电台 2
         [self.show_video_detail(video_id=v.video_id,show_pic=True) for v in[self.pornhub.video_list[k] for k in(random.sample(list(self.pornhub.video_list),n))]]
         return
     def collect(self,name_list=' , '):
+        #收集指定类别，如：收集[Russian,German]
         try:
             name_list=name_list.split(',')
         except:
@@ -91,13 +95,16 @@ class wechat_session():
         send_text('Number of videos : '+str(n)+' Average time cost : '+str(n/(time.time()-st))+'page/s')
         return
     def list_all_categories(self,root='https://www.pornhub.com'):
+        #查看全站的类别列表，发送到微信
         send_text(','.join(self.pornhub.category_name_list))
         return
     def list_local_categories(self):
+        #查看本地的类别列表，发送到微信
         local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
         send_text('There are '+str(len(local_name_list))+' categories.\n'+','.join(local_name_list))
         return
     def broswe_category(self,name='',num=5,start=0):
+        #浏览某一类别，[]内是类别名称，{}是开始页数，（）内是跨度
         local_name_list=[k for k in self.pornhub.category_name_list if self.pornhub.category_dict.get(k,False)]
         if name not in local_name_list:
             self.collect(name)
@@ -115,8 +122,7 @@ class wechat_session():
     #显示视频信息和封面图片
     #Show infomations and the cover oicture of the video
         try:
-            video=self.pornhub.video_list[video_id]
-            video.update()
+            video=self.pornhub.video_list[video_id].update()
             if show_pic:
                 headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
                 if not pic_dir:
@@ -154,6 +160,7 @@ class wechat_session():
             send_text(traceback.format_exc())
         return
     def save(self):
+        #保存当前pornhub对象
         send_text('Saving pornhun object')
         try:
             with open('pornhub.pkl','wb')as f:
@@ -173,6 +180,7 @@ class wechat_session():
         except:
             return ''
     def registe(self):
+        #注册回复方法
         @itchat.msg_register(TEXT)
         def auto_reply(msg):
             text=msg['Text']

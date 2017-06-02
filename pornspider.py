@@ -119,6 +119,7 @@ class video():
             self.mp4add,self.duration,self.info='',0,''
             print('Got error, failed instantiating viedo: '+self.title)
             traceback.print_exc()
+        return self
     def show_info(self,pic_dir='',show_pic=False):
 #显示视频信息和封面图片
 #Show infomations and the cover oicture of the video
